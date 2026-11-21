@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+cache/
+*.npy
+results/*_local_only.csv
+.ipynb_checkpoints/
+.venv/
