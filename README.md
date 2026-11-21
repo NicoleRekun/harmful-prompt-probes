@@ -2,7 +2,7 @@
 
 A small interpretability and safety experiment. I take real user prompts that people sent to a chatbot, run them through an open-weights instruction-tuned model, and train a **linear probe** on the model's hidden states at every layer to predict whether the prompt is toxic. I compare that against a **TF-IDF text classifier** that never looks inside a model.
 
-**Status:** pipeline built and tested on synthetic data. First full run on ToxicChat pending. Results will be added below.
+**Status:** first full run complete (Nov 2026). Results below.
 
 ## Why this matters
 
@@ -36,13 +36,30 @@ Outputs go to `results/`: `metrics.json` and `auroc_by_layer.png`. Activations a
 
 ## Results
 
-_To be filled in after the first run:_
+First run: 2,000 training and 1,000 test prompts from ToxicChat (7.1% toxic in test), `Qwen2.5-0.5B-Instruct`, last-token activations.
 
-- Best probe layer and AUROC vs. TF-IDF baseline
-- AUROC-by-layer plot
-- Jailbreak recall: probe vs. baseline
-- Shuffled-label control
-- Error analysis: what kinds of prompts each method misses
+![Test AUROC by layer](results/auroc_by_layer.png)
+
+| | TF-IDF text classifier | Best linear probe (layer 22) |
+|---|---|---|
+| AUROC | 0.931 | **0.943** |
+| Average precision | **0.723** | 0.694 |
+| F1 at 0.5 | 0.595 | **0.680** |
+
+**Shuffled-label control:** AUROC 0.476 (mean of 5 runs), i.e. chance. The probe is reading a real signal.
+
+**What the layers show.** Layer 0 scores exactly 0.5. That is expected: the last token is the same chat-template token for every prompt, so the embedding carries no information about the prompt. From layer 1 the probe jumps to about 0.88, then improves fairly steadily with depth, passing the text classifier around layer 16 and peaking in the last few layers (22-24). Information about whether a prompt is toxic becomes more linearly readable deeper in the model.
+
+**Honest read.** The probe beats the text classifier on AUROC and F1 but is slightly behind on average precision. With one split and 71 toxic test prompts, the AUROC gap (0.012) is small and could be within noise. Treat this as "comparable, with a hint of an edge", not a decisive win.
+
+**Error analysis.** Looking at prompts where the two methods disagree, the probe gives very high scores to prompts about sensitive topics (drugs, hacking, weapons, sexual content, role-play set-ups), including many that ToxicChat's annotators labelled non-toxic. The text classifier, by contrast, scores most of these in the middle. So the probe seems to track "risky topic or intent" more than the dataset's narrower "toxic" label. Some of its false positives are arguably label disagreements rather than mistakes.
+
+**Next steps**
+
+- Repeat over several random splits and report confidence intervals
+- Test on a cleaner harmful-request dataset where topic and intent are labelled separately
+- Compare model sizes, and mean vs. last-token pooling
+- Check whether the probe transfers to prompts in other languages
 
 ## Limitations
 
