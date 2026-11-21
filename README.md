@@ -62,6 +62,7 @@ First run: 2,000 training and 1,000 test prompts from ToxicChat (7.1% toxic in t
 - Compare model sizes, and mean vs. last-token pooling
 - Check whether the probe transfers to prompts in other languages
 - Evaluate on a larger set of jailbreak prompts
+- Package the probe as a policy-as-code guardrail: a risk score from the model's activations, with a threshold set in a policy file, that flags or blocks a prompt before the model answers
 
 ## Limitations
 
